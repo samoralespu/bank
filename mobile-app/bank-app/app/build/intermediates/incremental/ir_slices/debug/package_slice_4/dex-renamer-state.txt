@@ -1,0 +1,4 @@
+#Sun May 26 00:21:34 COT 2019
+base.0=C\:\\Users\\WINDOWS\\bank\\mobile-app\\bank-app\\app\\build\\intermediates\\transforms\\dexMerger\\debug\\4
+path.0=classes.dex
+renamed.0=classes.dex

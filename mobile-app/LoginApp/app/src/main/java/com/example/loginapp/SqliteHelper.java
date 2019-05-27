@@ -5,10 +5,18 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Base64;
 
+import java.security.MessageDigest;
 import java.util.Calendar;
 
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
+
 public class SqliteHelper extends SQLiteOpenHelper {
+
+    //clave
+    private String clave = "Diesel";
 
     //DATABASE NAME
     public static final String DATABASE_NAME = "bank-app-db";
@@ -94,7 +102,7 @@ public class SqliteHelper extends SQLiteOpenHelper {
         long todo_id = db.insert(TABLE_USERS, null, values);
     }
 
-    public User Authenticate(User user) {
+    public User Authenticate(User user) throws Exception {
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(
                 "SELECT * FROM " +  TABLE_USERS
@@ -105,7 +113,7 @@ public class SqliteHelper extends SQLiteOpenHelper {
             User user1 = new User(cursor.getString(0), cursor.getString(1), cursor.getString(2), cursor.getString(3), cursor.getString(4));
 
             //Match both passwords check they are same or not
-            if (user.password.equalsIgnoreCase(user1.password)) {
+            if (user.password.equalsIgnoreCase(desencriptar(user1.password, clave))){
                 return user1;
             }
         }
@@ -128,5 +136,22 @@ public class SqliteHelper extends SQLiteOpenHelper {
 
         //if id and username does not exist return false
         return false;
+    }
+
+    public String desencriptar (String datos, String password) throws Exception {
+         SecretKeySpec secretKey = generateKey(password);
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.DECRYPT_MODE, secretKey);
+        byte[] datosDecodificados = Base64.decode(datos, Base64.DEFAULT);
+        byte[] datosDesencriptadosByte = cipher.doFinal(datosDecodificados);
+        String datosDesencriptadosString = new String(datosDesencriptadosByte);
+        return datosDesencriptadosString;
+    }
+    private SecretKeySpec generateKey(String password) throws Exception{
+        MessageDigest sha = MessageDigest.getInstance("SHA-256");
+        byte[] key = password.getBytes("UTF-8");
+        key = sha.digest(key);
+        SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
+        return secretKey;
     }
 }

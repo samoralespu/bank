@@ -6,10 +6,16 @@ import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Base64;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+
+import java.security.MessageDigest;
+
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 
 
 public class RegisterActivity extends AppCompatActivity {
@@ -30,6 +36,10 @@ public class RegisterActivity extends AppCompatActivity {
     //Declaration SqliteHelper
     SqliteHelper sqliteHelper;
 
+    //Declarando String
+    private String textoSalida;
+    private String clave = "Diesel";
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,8 +58,15 @@ public class RegisterActivity extends AppCompatActivity {
                     //Check in the database is there any user associated with  this id, username
                     if (!sqliteHelper.doesExist(ID, Username)) {
 
+                    //Si no existe
+                    try{
+                        textoSalida = encriptar(Password, clave);
+                    } catch(Exception e) {
+                        e.printStackTrace();
+                    }
+
                         //does not exist now add new user to database
-                        sqliteHelper.addUser(new User(ID, Username, "null", Password, "null"));
+                        sqliteHelper.addUser(new User(ID, Username, "null", textoSalida, "null"));
                         Snackbar.make(buttonRegister, "User created successfully! Please Login ", Snackbar.LENGTH_LONG).show();
                         new Handler().postDelayed(new Runnable() {
                             @Override
@@ -67,6 +84,26 @@ public class RegisterActivity extends AppCompatActivity {
                 }
             }
         });
+
+
+
+    }
+
+    private String encriptar(String datos, String password) throws Exception{
+        SecretKeySpec secretKey = generateKey(password);
+        Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.ENCRYPT_MODE,secretKey);
+        byte[] datosEncriptadosBytes = cipher.doFinal(datos.getBytes());
+        String datosEncriptadosString = Base64.encodeToString(datosEncriptadosBytes, Base64.DEFAULT);
+        return datosEncriptadosString;
+    }
+
+    private SecretKeySpec generateKey(String password) throws Exception{
+        MessageDigest sha = MessageDigest.getInstance("SHA-256");
+        byte[] key = password.getBytes("UTF-8");
+        key = sha.digest(key);
+        SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
+        return secretKey;
     }
 
     //this method used to set Login TextView click event
